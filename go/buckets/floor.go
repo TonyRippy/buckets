@@ -22,6 +22,7 @@ type floorBucketer struct {
 	Width       float64
 }
 
+// FloorBucketer returns a bucketer that rounds down to the nearest multiple of width.
 func FloorBucketer(width float64) (BucketingStrategy, error) {
 	if width <= 0 {
 		return nil, fmt.Errorf("invalid width %g", width)
