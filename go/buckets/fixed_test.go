@@ -22,7 +22,7 @@ func TestFixedBucketerIndex(t *testing.T) {
 		name   string
 		width  float64
 		origin float64
-		closed ClosedSide
+		closed Alignment
 		value  float64
 		index  int32
 	}{
@@ -137,7 +137,7 @@ func TestFixedBucketerRange(t *testing.T) {
 		name   string
 		width  float64
 		origin float64
-		closed ClosedSide
+		closed Alignment
 		index  int32
 		want   Range
 	}{
@@ -216,8 +216,8 @@ func assertFixedBucketerEquals(t *testing.T, want *fixedBucketer, got BucketingS
 	if fixed.Origin != want.Origin {
 		t.Errorf("expected Origin %v, got %v", want.Origin, fixed.Origin)
 	}
-	if fixed.ClosedSide != want.ClosedSide {
-		t.Errorf("expected ClosedSide %v, got %v", want.ClosedSide, fixed.ClosedSide)
+	if fixed.Alignment != want.Alignment {
+		t.Errorf("expected ClosedSide %v, got %v", want.Alignment, fixed.Alignment)
 	}
 }
 
@@ -230,32 +230,32 @@ func TestFixedBucketerParse(t *testing.T) {
 	}{
 		{
 			spec:  "fixed",
-			want:  &fixedBucketer{Width: 1, Origin: 0, ClosedSide: Left},
+			want:  &fixedBucketer{Width: 1, Origin: 0, Alignment: Left},
 			canon: "fixed",
 		},
 		{
 			spec:  "fixed:width=0.5",
-			want:  &fixedBucketer{Width: 0.5, Origin: 0, ClosedSide: Left},
+			want:  &fixedBucketer{Width: 0.5, Origin: 0, Alignment: Left},
 			canon: "fixed:width=0.5",
 		},
 		{
 			spec:  "fixed:width=10,origin=5",
-			want:  &fixedBucketer{Width: 10, Origin: 5, ClosedSide: Left},
+			want:  &fixedBucketer{Width: 10, Origin: 5, Alignment: Left},
 			canon: "fixed:width=10,origin=5",
 		},
 		{
 			spec:  "fixed:closed=right",
-			want:  &fixedBucketer{Width: 1, Origin: 0, ClosedSide: Right},
+			want:  &fixedBucketer{Width: 1, Origin: 0, Alignment: Right},
 			canon: "fixed:closed=right",
 		},
 		{
 			spec:  "fixed:width=10,origin=5,closed=right",
-			want:  &fixedBucketer{Width: 10, Origin: 5, ClosedSide: Right},
+			want:  &fixedBucketer{Width: 10, Origin: 5, Alignment: Right},
 			canon: "fixed:width=10,origin=5,closed=right",
 		},
 		{
 			spec:  " fixed : WIDTH=10, ORIGIN=5, CLOSED=RIGHT ",
-			want:  &fixedBucketer{Width: 10, Origin: 5, ClosedSide: Right},
+			want:  &fixedBucketer{Width: 10, Origin: 5, Alignment: Right},
 			canon: "fixed:width=10,origin=5,closed=right",
 		},
 		{
@@ -297,7 +297,7 @@ func TestFixedBucketerParse(t *testing.T) {
 }
 
 func TestFixedBucketerInvalidClosedSide(t *testing.T) {
-	_, err := FixedBucketer(1, 0, ClosedSide(255))
+	_, err := FixedBucketer(1, 0, Alignment(255))
 	if err == nil {
 		t.Fatalf("expected error")
 	}
@@ -305,12 +305,12 @@ func TestFixedBucketerInvalidClosedSide(t *testing.T) {
 
 func TestClosedSideString(t *testing.T) {
 	for _, test := range []struct {
-		side ClosedSide
+		side Alignment
 		want string
 	}{
 		{Left, "left"},
 		{Right, "right"},
-		{ClosedSide(42), "unknown(42)"},
+		{Alignment(42), "unknown(42)"},
 	} {
 		t.Run(fmt.Sprintf("side=%d", test.side), func(t *testing.T) {
 			if got := test.side.String(); got != test.want {

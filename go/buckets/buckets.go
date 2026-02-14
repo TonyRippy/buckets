@@ -17,6 +17,47 @@ import (
 	"strings"
 )
 
+// Alignment describes where an index's value should be on the bucket for that index.
+// An index's value is computed using a formula $f(i)$ for index $i$.
+// A left-aligned bucketing strategy would use buckets of $[f(i), f(i+1))$ for index `i`.
+// A right-aligned bucketing strategy would use buckets of $(f(i-1), f(i)]$ for index `i`.
+// This does not apply to all bucketing strategies.
+type Alignment uint8
+
+const (
+	// Left indicates that the index's value should be on the left side of the bucket for that index.
+	// For example, a range that is closed on the left side is [0, 10).
+	Left Alignment = iota
+
+	// Right indicates that the range is aligned on the right side.
+	// For example, a range that is closed on the right side is (0, 10].
+	Right
+)
+
+// String returns a string representation of the closed side.
+func (s Alignment) String() string {
+	switch s {
+	case Left:
+		return "left"
+	case Right:
+		return "right"
+	default:
+		return fmt.Sprintf("unknown(%d)", s)
+	}
+}
+
+// ParseAlignment parses a string representation of a closed side.
+func ParseAlignment(s string) (Alignment, error) {
+	switch strings.ToLower(strings.TrimSpace(s)) {
+	case "left":
+		return Left, nil
+	case "right":
+		return Right, nil
+	default:
+		return 0, fmt.Errorf("invalid closed side %q", s)
+	}
+}
+
 type BoundType uint8
 
 const (
@@ -80,42 +121,4 @@ type BucketingStrategy interface {
 
 	// Range returns the range of values that are in the bucket with the given index.
 	Range(index int32) (Range, error)
-}
-
-// ClosedSide represents the side of a partially closed range that is closed.
-// It is used to indicate whether a bucketer is closed on the left or right side.
-type ClosedSide uint8
-
-const (
-	// Left indicates that the range is closed on the left side.
-	// For example, a range that is closed on the left side is [0, 10).
-	Left ClosedSide = iota
-
-	// Right indicates that the range is closed on the right side.
-	// For example, a range that is closed on the right side is (0, 10].
-	Right
-)
-
-// String returns a string representation of the closed side.
-func (s ClosedSide) String() string {
-	switch s {
-	case Left:
-		return "left"
-	case Right:
-		return "right"
-	default:
-		return fmt.Sprintf("unknown(%d)", s)
-	}
-}
-
-// ParseClosedSide parses a string representation of a closed side.
-func ParseClosedSide(s string) (ClosedSide, error) {
-	switch strings.ToLower(strings.TrimSpace(s)) {
-	case "left":
-		return Left, nil
-	case "right":
-		return Right, nil
-	default:
-		return 0, fmt.Errorf("invalid closed side %q", s)
-	}
 }

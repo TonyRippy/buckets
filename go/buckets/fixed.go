@@ -20,20 +20,23 @@ import (
 )
 
 type fixedBucketer struct {
-	Width      float64
-	Origin     float64
-	ClosedSide ClosedSide
+	Width     float64
+	Origin    float64
+	Alignment Alignment
 }
 
 // FixedBucketer returns a fixed-width bucketer with the given origin and closed side.
-func FixedBucketer(width, origin float64, closedSide ClosedSide) (BucketingStrategy, error) {
-	if width <= 0 {
+func FixedBucketer(width, origin float64, align Alignment) (BucketingStrategy, error) {
+	if math.IsNaN(width) || math.IsInf(width, 0) || width <= 0 {
 		return nil, fmt.Errorf("invalid width %g", width)
 	}
-	if closedSide != Left && closedSide != Right {
-		return nil, fmt.Errorf("invalid closed side %d", closedSide)
+	if math.IsNaN(origin) || math.IsInf(origin, 0) {
+		return nil, fmt.Errorf("invalid origin %g", origin)
 	}
-	return &fixedBucketer{Width: width, Origin: origin, ClosedSide: closedSide}, nil
+	if align != Left && align != Right {
+		return nil, fmt.Errorf("invalid alignment %d", align)
+	}
+	return &fixedBucketer{Width: width, Origin: origin, Alignment: align}, nil
 }
 
 func (b *fixedBucketer) IndexOf(value float64) (int32, error) {
@@ -41,18 +44,18 @@ func (b *fixedBucketer) IndexOf(value float64) (int32, error) {
 		return 0, fmt.Errorf("invalid width %g", b.Width)
 	}
 	shifted := (value - b.Origin) / b.Width
-	switch b.ClosedSide {
+	switch b.Alignment {
 	case Left:
 		return int32(math.Floor(shifted)), nil
 	case Right:
 		return int32(math.Ceil(shifted)), nil
 	default:
-		return 0, fmt.Errorf("invalid closed side %d", b.ClosedSide)
+		return 0, fmt.Errorf("invalid alignment %d", b.Alignment)
 	}
 }
 
 func (b *fixedBucketer) Range(index int32) (Range, error) {
-	switch b.ClosedSide {
+	switch b.Alignment {
 	case Left:
 		min := b.Origin + float64(index)*b.Width
 		max := min + b.Width
@@ -62,7 +65,7 @@ func (b *fixedBucketer) Range(index int32) (Range, error) {
 		min := max - b.Width
 		return Range{From: min, To: max, FromBound: Open, ToBound: Closed}, nil
 	default:
-		return Range{}, fmt.Errorf("invalid closed side %d", b.ClosedSide)
+		return Range{}, fmt.Errorf("invalid closed side %d", b.Alignment)
 	}
 }
 
@@ -74,7 +77,7 @@ func (b *fixedBucketer) String() string {
 	if b.Origin != 0 {
 		parts = append(parts, fmt.Sprintf("origin=%g", b.Origin))
 	}
-	if b.ClosedSide == Right {
+	if b.Alignment == Right {
 		parts = append(parts, "closed=right")
 	}
 	if len(parts) == 0 {
@@ -106,7 +109,7 @@ func init() {
 		closedSide := Left
 		if arg, ok := args["closed"]; ok {
 			var err error
-			closedSide, err = ParseClosedSide(arg)
+			closedSide, err = ParseAlignment(arg)
 			if err != nil {
 				return nil, err
 			}
