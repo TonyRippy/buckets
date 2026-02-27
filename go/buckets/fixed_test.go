@@ -13,196 +13,14 @@
 package buckets
 
 import (
+	"encoding/csv"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
 	"testing"
 )
-
-func TestFixedBucketerIndex(t *testing.T) {
-	for _, test := range []struct {
-		name   string
-		width  float64
-		origin float64
-		closed Alignment
-		value  float64
-		index  int32
-	}{
-		{
-			name:   "left-closed/default-origin",
-			width:  10,
-			origin: 0,
-			closed: Left,
-			value:  9.999,
-			index:  0,
-		},
-		{
-			name:   "left-closed/upper-boundary",
-			width:  10,
-			origin: 0,
-			closed: Left,
-			value:  10,
-			index:  1,
-		},
-		{
-			name:   "left-closed/negative",
-			width:  10,
-			origin: 0,
-			closed: Left,
-			value:  -11,
-			index:  -2,
-		},
-		{
-			name:   "right-closed/default-origin",
-			width:  10,
-			origin: 0,
-			closed: Right,
-			value:  0.001,
-			index:  1,
-		},
-		{
-			name:   "right-closed/lower-boundary",
-			width:  10,
-			origin: 0,
-			closed: Right,
-			value:  0,
-			index:  0,
-		},
-		{
-			name:   "right-closed/negative",
-			width:  10,
-			origin: 0,
-			closed: Right,
-			value:  -10,
-			index:  -1,
-		},
-		{
-			name:   "left-closed/shifted-origin",
-			width:  10,
-			origin: 5,
-			closed: Left,
-			value:  14.9,
-			index:  0,
-		},
-		{
-			name:   "left-closed/shifted-origin-boundary",
-			width:  10,
-			origin: 5,
-			closed: Left,
-			value:  15,
-			index:  1,
-		},
-		{
-			name:   "right-closed/shifted-origin-boundary",
-			width:  10,
-			origin: 5,
-			closed: Right,
-			value:  5,
-			index:  0,
-		},
-		{
-			name:   "right-closed/shifted-origin-open-lower-boundary",
-			width:  10,
-			origin: 5,
-			closed: Right,
-			value:  -5.001,
-			index:  -1,
-		},
-	} {
-		t.Run(test.name, func(t *testing.T) {
-			bucketer, err := FixedBucketer(test.width, test.origin, test.closed)
-			if err != nil {
-				t.Fatalf("FixedBucketer: %v", err)
-			}
-
-			index, err := bucketer.IndexOf(test.value)
-			if err != nil {
-				t.Fatalf("IndexOf: %v", err)
-			}
-			if index != test.index {
-				t.Fatalf("expected index %d, got %d", test.index, index)
-			}
-
-			r, err := bucketer.Range(test.index)
-			if err != nil {
-				t.Fatalf("Range: %v", err)
-			}
-			if !r.Contains(test.value) {
-				t.Fatalf("expected %v to be in range %v", test.value, r)
-			}
-		})
-	}
-}
-
-func TestFixedBucketerRange(t *testing.T) {
-	for _, test := range []struct {
-		name   string
-		width  float64
-		origin float64
-		closed Alignment
-		index  int32
-		want   Range
-	}{
-		{
-			name:   "left-closed/default-origin",
-			width:  10,
-			origin: 0,
-			closed: Left,
-			index:  0,
-			want:   Range{From: 0, To: 10, FromBound: Closed, ToBound: Open},
-		},
-		{
-			name:   "left-closed/negative-index",
-			width:  10,
-			origin: 0,
-			closed: Left,
-			index:  -1,
-			want:   Range{From: -10, To: 0, FromBound: Closed, ToBound: Open},
-		},
-		{
-			name:   "right-closed/default-origin",
-			width:  10,
-			origin: 0,
-			closed: Right,
-			index:  0,
-			want:   Range{From: -10, To: 0, FromBound: Open, ToBound: Closed},
-		},
-		{
-			name:   "right-closed/positive-index",
-			width:  10,
-			origin: 0,
-			closed: Right,
-			index:  1,
-			want:   Range{From: 0, To: 10, FromBound: Open, ToBound: Closed},
-		},
-		{
-			name:   "left-closed/shifted-origin",
-			width:  10,
-			origin: 5,
-			closed: Left,
-			index:  0,
-			want:   Range{From: 5, To: 15, FromBound: Closed, ToBound: Open},
-		},
-		{
-			name:   "right-closed/shifted-origin",
-			width:  10,
-			origin: 5,
-			closed: Right,
-			index:  0,
-			want:   Range{From: -5, To: 5, FromBound: Open, ToBound: Closed},
-		},
-	} {
-		t.Run(test.name, func(t *testing.T) {
-			bucketer, err := FixedBucketer(test.width, test.origin, test.closed)
-			if err != nil {
-				t.Fatalf("FixedBucketer: %v", err)
-			}
-			got, err := bucketer.Range(test.index)
-			if err != nil {
-				t.Fatalf("Range: %v", err)
-			}
-			assertRangeEquals(t, test.want, got)
-		})
-	}
-}
 
 func assertFixedBucketerEquals(t *testing.T, want *fixedBucketer, got BucketingStrategy) {
 	t.Helper()
@@ -222,75 +40,25 @@ func assertFixedBucketerEquals(t *testing.T, want *fixedBucketer, got BucketingS
 }
 
 func TestFixedBucketerParse(t *testing.T) {
-	for _, test := range []struct {
-		spec   string
-		want   *fixedBucketer
-		canon  string
-		hasErr bool
-	}{
-		{
-			spec:  "fixed",
-			want:  &fixedBucketer{Width: 1, Origin: 0, Alignment: Left},
-			canon: "fixed",
-		},
-		{
-			spec:  "fixed:width=0.5",
-			want:  &fixedBucketer{Width: 0.5, Origin: 0, Alignment: Left},
-			canon: "fixed:width=0.5",
-		},
-		{
-			spec:  "fixed:width=10,origin=5",
-			want:  &fixedBucketer{Width: 10, Origin: 5, Alignment: Left},
-			canon: "fixed:width=10,origin=5",
-		},
-		{
-			spec:  "fixed:closed=right",
-			want:  &fixedBucketer{Width: 1, Origin: 0, Alignment: Right},
-			canon: "fixed:closed=right",
-		},
-		{
-			spec:  "fixed:width=10,origin=5,closed=right",
-			want:  &fixedBucketer{Width: 10, Origin: 5, Alignment: Right},
-			canon: "fixed:width=10,origin=5,closed=right",
-		},
-		{
-			spec:  " fixed : WIDTH=10, ORIGIN=5, CLOSED=RIGHT ",
-			want:  &fixedBucketer{Width: 10, Origin: 5, Alignment: Right},
-			canon: "fixed:width=10,origin=5,closed=right",
-		},
-		{
-			spec:   "fixed:width=0",
-			hasErr: true,
-		},
-		{
-			spec:   "fixed:width=oops",
-			hasErr: true,
-		},
-		{
-			spec:   "fixed:origin=oops",
-			hasErr: true,
-		},
-		{
-			spec:   "fixed:closed=oops",
-			hasErr: true,
-		},
-	} {
-		t.Run(test.spec, func(t *testing.T) {
-			got, err := Parse(test.spec)
-			if test.hasErr {
+	for _, tc := range loadFixedParseTestCases(t) {
+		tc := tc
+		t.Run(tc.Name(), func(t *testing.T) {
+			got, err := Parse(tc.spec)
+			if tc.wantErr {
 				if err == nil {
 					t.Fatalf("expected error")
+				}
+				if tc.errorContains != "" && !strings.Contains(err.Error(), tc.errorContains) {
+					t.Fatalf("expected error containing %q, got %q", tc.errorContains, err.Error())
 				}
 				return
 			}
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
-
-			assertFixedBucketerEquals(t, test.want, got)
-
-			if got.String() != test.canon {
-				t.Errorf("expected canonical string %q, got %q", test.canon, got.String())
+			assertFixedBucketerEquals(t, tc.want, got)
+			if got.String() != tc.canonical {
+				t.Errorf("expected canonical string %q, got %q", tc.canonical, got.String())
 			}
 		})
 	}
@@ -303,19 +71,127 @@ func TestFixedBucketerInvalidClosedSide(t *testing.T) {
 	}
 }
 
-func TestClosedSideString(t *testing.T) {
-	for _, test := range []struct {
-		side Alignment
-		want string
-	}{
-		{Left, "left"},
-		{Right, "right"},
-		{Alignment(42), "unknown(42)"},
-	} {
-		t.Run(fmt.Sprintf("side=%d", test.side), func(t *testing.T) {
-			if got := test.side.String(); got != test.want {
-				t.Fatalf("expected %q, got %q", test.want, got)
+type fixedParseTestCase struct {
+	file          string
+	line          int
+	spec          string
+	wantErr       bool
+	errorContains string
+	want          *fixedBucketer
+	canonical     string
+}
+
+func (tc fixedParseTestCase) Name() string {
+	return fmt.Sprintf("%s:%d", tc.file, tc.line)
+}
+
+func loadFixedParseTestCases(t *testing.T) []fixedParseTestCase {
+	t.Helper()
+
+	path := filepath.Join(testCaseDirectory(t), "fixed_parse.csv")
+	file, err := os.Open(path)
+	if err != nil {
+		t.Fatalf("open fixture %q: %v", path, err)
+	}
+	defer file.Close()
+
+	reader := csv.NewReader(file)
+	reader.FieldsPerRecord = -1
+	records, err := reader.ReadAll()
+	if err != nil {
+		t.Fatalf("read fixture %q: %v", path, err)
+	}
+	if len(records) == 0 {
+		t.Fatalf("fixture %q has no header row", path)
+	}
+
+	headers := make([]string, len(records[0]))
+	columns := make(map[string]int, len(records[0]))
+	for i, field := range records[0] {
+		header := strings.TrimSpace(field)
+		if header == "" {
+			t.Fatalf("fixture %q line 1: empty header", path)
+		}
+		headers[i] = header
+		columns[header] = i
+	}
+
+	specCol := requiredFixedParseColumn(t, path, columns, "spec")
+	wantErrCol := requiredFixedParseColumn(t, path, columns, "want_error")
+	errorContainsCol := requiredFixedParseColumn(t, path, columns, "error_contains")
+	widthCol := requiredFixedParseColumn(t, path, columns, "width")
+	originCol := requiredFixedParseColumn(t, path, columns, "origin")
+	alignmentCol := requiredFixedParseColumn(t, path, columns, "alignment")
+	canonicalCol := requiredFixedParseColumn(t, path, columns, "canonical")
+
+	testCases := make([]fixedParseTestCase, 0, len(records)-1)
+	fileName := filepath.Base(path)
+	for i, fields := range records[1:] {
+		lineNo := i + 2
+		if len(fields) != len(headers) {
+			t.Fatalf("fixture %q line %d: expected %d fields, got %d", path, lineNo, len(headers), len(fields))
+		}
+
+		spec := fields[specCol]
+		wantErr := parseFixedParseBool(t, path, lineNo, fields[wantErrCol], "want_error")
+		tc := fixedParseTestCase{
+			file:          fileName,
+			line:          lineNo,
+			spec:          spec,
+			wantErr:       wantErr,
+			errorContains: fields[errorContainsCol],
+		}
+
+		if !wantErr {
+			width, err := strconv.ParseFloat(strings.TrimSpace(fields[widthCol]), 64)
+			if err != nil {
+				t.Fatalf("fixture %q line %d: parse width: %v", path, lineNo, err)
 			}
-		})
+
+			origin, err := strconv.ParseFloat(strings.TrimSpace(fields[originCol]), 64)
+			if err != nil {
+				t.Fatalf("fixture %q line %d: parse origin: %v", path, lineNo, err)
+			}
+
+			alignment, err := ParseAlignment(strings.TrimSpace(fields[alignmentCol]))
+			if err != nil {
+				t.Fatalf("fixture %q line %d: parse alignment: %v", path, lineNo, err)
+			}
+
+			tc.want = &fixedBucketer{
+				Width:     width,
+				Origin:    origin,
+				Alignment: alignment,
+			}
+			tc.canonical = fields[canonicalCol]
+		}
+
+		testCases = append(testCases, tc)
+	}
+	return testCases
+}
+
+func requiredFixedParseColumn(t *testing.T, path string, columns map[string]int, name string) int {
+	t.Helper()
+
+	col, ok := columns[name]
+	if !ok {
+		t.Fatalf("fixture %q missing required %q column", path, name)
+	}
+	return col
+}
+
+func parseFixedParseBool(t *testing.T, path string, lineNo int, raw string, field string) bool {
+	t.Helper()
+
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "true":
+		return true
+	case "false":
+		return false
+	default:
+		t.Fatalf("fixture %q line %d: parse %q as bool: invalid value %q", path, lineNo, field, raw)
+		return false
 	}
 }
+

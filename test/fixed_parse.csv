@@ -1,0 +1,17 @@
+spec,want_error,error_contains,width,origin,alignment,canonical
+fixed,false,,1,0,left,fixed
+fixed:width=0.5,false,,0.5,0,left,fixed:width=0.5
+"fixed:width=10,origin=5",false,,10,5,left,"fixed:width=10,origin=5"
+fixed:closed=right,false,,1,0,right,fixed:closed=right
+"fixed:width=10,origin=5,closed=right",false,,10,5,right,"fixed:width=10,origin=5,closed=right"
+" fixed : WIDTH=10, ORIGIN=5, CLOSED=RIGHT ",false,,10,5,right,"fixed:width=10,origin=5,closed=right"
+"fixed:width=2,foo=bar",false,,2,0,left,fixed:width=2
+"fixed:width=10,width=2,origin=1,origin=3",false,,2,3,left,"fixed:width=2,origin=3"
+"fixed:width=10,,origin=5, ,closed=left,",false,,10,5,left,"fixed:width=10,origin=5"
+fixed:width=1e1,false,,10,0,left,fixed:width=10
+fixed:width=0,true,invalid width,,,,
+fixed:width=oops,true,invalid width,,,,
+fixed:width=,true,invalid width,,,,
+fixed:origin=oops,true,invalid origin,,,,
+fixed:closed=oops,true,invalid closed side,,,,
+fixed:closed=,true,invalid closed side,,,,

@@ -13,16 +13,27 @@
 package buckets
 
 import (
-	"fmt"
+	"path/filepath"
+	"runtime"
+	"testing"
 )
 
-// BucketingStrategy is a strategy for bucketing values into ranges.
-type BucketingStrategy interface {
-	fmt.Stringer
+func testCaseDirectory(t *testing.T) string {
+	t.Helper()
 
-	// IndexOf returns the index of the bucket that contains the given value.
-	IndexOf(value float64) (int32, error)
+	_, currentFile, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatalf("resolve fixture path: unable to inspect caller")
+	}
+	return filepath.Clean(filepath.Join(filepath.Dir(currentFile), "..", "..", "test"))
+}
 
-	// Range returns the range of values that are in the bucket with the given index.
-	Range(index int32) (Range, error)
+func requiredColumn(t *testing.T, path string, columns map[string]int, name string) int {
+	t.Helper()
+
+	col, ok := columns[name]
+	if !ok {
+		t.Fatalf("index fixture %q missing required %q column", path, name)
+	}
+	return col
 }
