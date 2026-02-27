@@ -25,7 +25,7 @@ func testCaseDirectory(t *testing.T) string {
 	if !ok {
 		t.Fatalf("resolve fixture path: unable to inspect caller")
 	}
-	return filepath.Clean(filepath.Join(filepath.Dir(currentFile), "..", "..", "test"))
+	return filepath.Clean(filepath.Join(filepath.Dir(currentFile), "..", "..", "tests"))
 }
 
 func requiredColumn(t *testing.T, path string, columns map[string]int, name string) int {
