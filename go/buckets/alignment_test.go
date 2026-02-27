@@ -17,40 +17,39 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 )
 
-func TestParseErrors(t *testing.T) {
-	for _, tc := range loadParseErrorTestCases(t) {
+func TestAlignmentString(t *testing.T) {
+	for _, tc := range loadAlignmentStringTestCases(t) {
 		tc := tc
 		t.Run(tc.Name(), func(t *testing.T) {
-			_, err := Parse(tc.spec)
-			if err == nil {
-				t.Fatalf("expected error")
-			}
-			if !strings.Contains(err.Error(), tc.errorContains) {
-				t.Fatalf("expected error containing %q, got %q", tc.errorContains, err.Error())
+			side := Alignment(tc.side)
+			want := tc.want
+			if got := side.String(); got != want {
+				t.Fatalf("expected %q, got %q", want, got)
 			}
 		})
 	}
 }
 
-type parseErrorTestCase struct {
-	file          string
-	line          int
-	spec          string
-	errorContains string
+type alignmentStringTestCase struct {
+	file string
+	line int
+	side int
+	want string
 }
 
-func (tc parseErrorTestCase) Name() string {
+func (tc alignmentStringTestCase) Name() string {
 	return fmt.Sprintf("%s:%d", tc.file, tc.line)
 }
 
-func loadParseErrorTestCases(t *testing.T) []parseErrorTestCase {
+func loadAlignmentStringTestCases(t *testing.T) []alignmentStringTestCase {
 	t.Helper()
 
-	path := filepath.Join(testCaseDirectory(t), "parse_errors.csv")
+	path := filepath.Join(testCaseDirectory(t), "alignment_string.csv")
 	file, err := os.Open(path)
 	if err != nil {
 		t.Fatalf("open fixture %q: %v", path, err)
@@ -78,10 +77,10 @@ func loadParseErrorTestCases(t *testing.T) []parseErrorTestCase {
 		columns[header] = i
 	}
 
-	specCol := requiredColumn(t, path, columns, "spec")
-	errorContainsCol := requiredColumn(t, path, columns, "error_contains")
+	sideCol := requiredColumn(t, path, columns, "side")
+	wantCol := requiredColumn(t, path, columns, "want")
 
-	testCases := make([]parseErrorTestCase, 0, len(records)-1)
+	testCases := make([]alignmentStringTestCase, 0, len(records)-1)
 	fileName := filepath.Base(path)
 	for i, fields := range records[1:] {
 		lineNo := i + 2
@@ -89,12 +88,19 @@ func loadParseErrorTestCases(t *testing.T) []parseErrorTestCase {
 			t.Fatalf("fixture %q line %d: expected %d fields, got %d", path, lineNo, len(headers), len(fields))
 		}
 
-		testCases = append(testCases, parseErrorTestCase{
-			file:          fileName,
-			line:          lineNo,
-			spec:          fields[specCol],
-			errorContains: fields[errorContainsCol],
+		side, err := strconv.Atoi(strings.TrimSpace(fields[sideCol]))
+		if err != nil {
+			t.Fatalf("fixture %q line %d: parse side: %v", path, lineNo, err)
+		}
+
+		want := fields[wantCol]
+		testCases = append(testCases, alignmentStringTestCase{
+			file: fileName,
+			line: lineNo,
+			side: side,
+			want: want,
 		})
 	}
 	return testCases
 }
+

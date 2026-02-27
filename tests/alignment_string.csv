@@ -1,0 +1,4 @@
+name,side,want
+left,0,left
+right,1,right
+unknown,42,unknown(42)

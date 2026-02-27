@@ -1,0 +1,5 @@
+spec,error_contains
+,empty
+"   ",empty
+unknown,unknown
+unknown:width=10,unknown
