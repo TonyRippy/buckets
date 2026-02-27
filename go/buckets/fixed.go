@@ -77,8 +77,8 @@ func (b *fixedBucketer) String() string {
 	if b.Origin != 0 {
 		parts = append(parts, fmt.Sprintf("origin=%g", b.Origin))
 	}
-	if b.Alignment == Right {
-		parts = append(parts, "closed=right")
+	if b.Alignment == Left {
+		parts = append(parts, "closed=left")
 	}
 	if len(parts) == 0 {
 		return "fixed"
@@ -106,7 +106,7 @@ func init() {
 			}
 		}
 
-		closedSide := Left
+		closedSide := Right
 		if arg, ok := args["closed"]; ok {
 			var err error
 			closedSide, err = ParseAlignment(arg)

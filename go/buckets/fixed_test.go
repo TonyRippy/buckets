@@ -29,13 +29,13 @@ func assertFixedBucketerEquals(t *testing.T, want *fixedBucketer, got BucketingS
 		t.Fatalf("expected fixedBucketer, got %T", got)
 	}
 	if fixed.Width != want.Width {
-		t.Errorf("expected Width %v, got %v", want.Width, fixed.Width)
+		t.Errorf("expected width %v, got %v", want.Width, fixed.Width)
 	}
 	if fixed.Origin != want.Origin {
-		t.Errorf("expected Origin %v, got %v", want.Origin, fixed.Origin)
+		t.Errorf("expected origin %v, got %v", want.Origin, fixed.Origin)
 	}
 	if fixed.Alignment != want.Alignment {
-		t.Errorf("expected ClosedSide %v, got %v", want.Alignment, fixed.Alignment)
+		t.Errorf("expected alignment %v, got %v", want.Alignment, fixed.Alignment)
 	}
 }
 
@@ -64,7 +64,7 @@ func TestFixedBucketerParse(t *testing.T) {
 	}
 }
 
-func TestFixedBucketerInvalidClosedSide(t *testing.T) {
+func TestFixedBucketerInvalidAlignment(t *testing.T) {
 	_, err := FixedBucketer(1, 0, Alignment(255))
 	if err == nil {
 		t.Fatalf("expected error")
@@ -116,13 +116,13 @@ func loadFixedParseTestCases(t *testing.T) []fixedParseTestCase {
 		columns[header] = i
 	}
 
-	specCol := requiredFixedParseColumn(t, path, columns, "spec")
-	wantErrCol := requiredFixedParseColumn(t, path, columns, "want_error")
-	errorContainsCol := requiredFixedParseColumn(t, path, columns, "error_contains")
-	widthCol := requiredFixedParseColumn(t, path, columns, "width")
-	originCol := requiredFixedParseColumn(t, path, columns, "origin")
-	alignmentCol := requiredFixedParseColumn(t, path, columns, "alignment")
-	canonicalCol := requiredFixedParseColumn(t, path, columns, "canonical")
+	specCol := requiredColumn(t, path, columns, "spec")
+	wantErrCol := requiredColumn(t, path, columns, "want_error")
+	errorContainsCol := requiredColumn(t, path, columns, "error_contains")
+	widthCol := requiredColumn(t, path, columns, "width")
+	originCol := requiredColumn(t, path, columns, "origin")
+	alignmentCol := requiredColumn(t, path, columns, "alignment")
+	canonicalCol := requiredColumn(t, path, columns, "canonical")
 
 	testCases := make([]fixedParseTestCase, 0, len(records)-1)
 	fileName := filepath.Base(path)
@@ -133,31 +133,33 @@ func loadFixedParseTestCases(t *testing.T) []fixedParseTestCase {
 		}
 
 		spec := fields[specCol]
-		wantErr := parseFixedParseBool(t, path, lineNo, fields[wantErrCol], "want_error")
+		wantErr, err := strconv.ParseBool(strings.TrimSpace(fields[wantErrCol]))
+		if err != nil {
+			t.Fatalf("%s:%d: parse want_error: %v", fileName, lineNo, err)
+		}
+		errorContains := strings.TrimSpace(fields[errorContainsCol])
+
 		tc := fixedParseTestCase{
 			file:          fileName,
 			line:          lineNo,
 			spec:          spec,
 			wantErr:       wantErr,
-			errorContains: fields[errorContainsCol],
+			errorContains: errorContains,
 		}
 
 		if !wantErr {
 			width, err := strconv.ParseFloat(strings.TrimSpace(fields[widthCol]), 64)
 			if err != nil {
-				t.Fatalf("fixture %q line %d: parse width: %v", path, lineNo, err)
+				t.Fatalf("%s:%d: parse width: %v", fileName, lineNo, err)
 			}
-
 			origin, err := strconv.ParseFloat(strings.TrimSpace(fields[originCol]), 64)
 			if err != nil {
-				t.Fatalf("fixture %q line %d: parse origin: %v", path, lineNo, err)
+				t.Fatalf("%s:%d: parse origin: %v", fileName, lineNo, err)
 			}
-
 			alignment, err := ParseAlignment(strings.TrimSpace(fields[alignmentCol]))
 			if err != nil {
-				t.Fatalf("fixture %q line %d: parse alignment: %v", path, lineNo, err)
+				t.Fatalf("%s:%d: parse alignment: %v", fileName, lineNo, err)
 			}
-
 			tc.want = &fixedBucketer{
 				Width:     width,
 				Origin:    origin,
@@ -170,28 +172,3 @@ func loadFixedParseTestCases(t *testing.T) []fixedParseTestCase {
 	}
 	return testCases
 }
-
-func requiredFixedParseColumn(t *testing.T, path string, columns map[string]int, name string) int {
-	t.Helper()
-
-	col, ok := columns[name]
-	if !ok {
-		t.Fatalf("fixture %q missing required %q column", path, name)
-	}
-	return col
-}
-
-func parseFixedParseBool(t *testing.T, path string, lineNo int, raw string, field string) bool {
-	t.Helper()
-
-	switch strings.ToLower(strings.TrimSpace(raw)) {
-	case "true":
-		return true
-	case "false":
-		return false
-	default:
-		t.Fatalf("fixture %q line %d: parse %q as bool: invalid value %q", path, lineNo, field, raw)
-		return false
-	}
-}
-
