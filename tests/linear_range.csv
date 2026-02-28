@@ -1,0 +1,15 @@
+spec,index,from,from_bound,to,to_bound
+"linear:m=10,align=left",0,0,closed,10,open
+"linear:m=10,align=left",-1,-10,closed,0,open
+"linear:m=10,align=left",2,20,closed,30,open
+"linear:m=10,align=right",0,-10,open,0,closed
+"linear:m=10,align=right",-1,-20,open,-10,closed
+"linear:m=10,align=right",1,0,open,10,closed
+"linear:m=10,b=5,align=left",0,5,closed,15,open
+"linear:m=10,b=5,align=right",0,-5,open,5,closed
+"linear:m=10,b=5,align=right",1,5,open,15,closed
+"linear:m=0.1,align=left",3,0.30000000000000004,closed,0.4,open
+"linear:m=0.1,align=right",4,0.30000000000000004,open,0.4,closed
+"linear:m=0.2,b=0.1,align=left",1,0.30000000000000004,closed,0.5,open
+"linear:m=0.2,b=0.1,align=right",1,0.10000000000000003,open,0.30000000000000004,closed
+"linear:m=1e-9,align=left",3,3.0000000000000004e-09,closed,4e-09,open

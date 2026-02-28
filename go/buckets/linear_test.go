@@ -17,30 +17,31 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
 )
 
-func assertFixedBucketerEquals(t *testing.T, want *fixedBucketer, got BucketingStrategy) {
+func assertLinearBucketerEquals(t *testing.T, want linearParseExpectation, got BucketingStrategy) {
 	t.Helper()
-	fixed, ok := got.(*fixedBucketer)
+	linear, ok := got.(*linearBucketer)
 	if !ok {
-		t.Fatalf("expected fixedBucketer, got %T", got)
+		t.Fatalf("expected linearBucketer, got %T", got)
 	}
-	if fixed.Width != want.Width {
-		t.Errorf("expected width %v, got %v", want.Width, fixed.Width)
+	if linear.M != want.m {
+		t.Errorf("expected slope %v, got %v", want.m, linear.M)
 	}
-	if fixed.Origin != want.Origin {
-		t.Errorf("expected origin %v, got %v", want.Origin, fixed.Origin)
+	if linear.B != want.b {
+		t.Errorf("expected intercept %v, got %v", want.b, linear.B)
 	}
-	if fixed.Alignment != want.Alignment {
-		t.Errorf("expected alignment %v, got %v", want.Alignment, fixed.Alignment)
+	if linear.Alignment != want.alignment {
+		t.Errorf("expected alignment %v, got %v", want.alignment, linear.Alignment)
 	}
 }
 
-func TestFixedBucketerParse(t *testing.T) {
-	for _, tc := range loadFixedParseTestCases(t) {
+func TestLinearBucketerParse(t *testing.T) {
+	for _, tc := range loadLinearParseTestCases(t) {
 		tc := tc
 		t.Run(tc.Name(), func(t *testing.T) {
 			got, err := Parse(tc.spec)
@@ -56,7 +57,7 @@ func TestFixedBucketerParse(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
-			assertFixedBucketerEquals(t, tc.want, got)
+			assertLinearBucketerEquals(t, tc.want, got)
 			if got.String() != tc.canonical {
 				t.Errorf("expected canonical string %q, got %q", tc.canonical, got.String())
 			}
@@ -64,34 +65,47 @@ func TestFixedBucketerParse(t *testing.T) {
 	}
 }
 
-func TestFixedBucketerInvalidAlignment(t *testing.T) {
-	_, err := FixedBucketer(1, 0, Alignment(255))
+func TestLinearBucketerInvalidAlignment(t *testing.T) {
+	_, err := LinearBucketer(1, 0, Alignment(255))
 	if err == nil {
 		t.Fatalf("expected error")
 	}
 }
 
-type fixedParseTestCase struct {
+type linearParseTestCase struct {
 	file          string
 	line          int
 	spec          string
 	wantErr       bool
 	errorContains string
-	want          *fixedBucketer
+	want          linearParseExpectation
 	canonical     string
 }
 
-func (tc fixedParseTestCase) Name() string {
+type linearParseExpectation struct {
+	m         float64
+	b         float64
+	alignment Alignment
+}
+
+func (tc linearParseTestCase) Name() string {
 	return fmt.Sprintf("%s:%d", tc.file, tc.line)
 }
 
-func loadFixedParseTestCases(t *testing.T) []fixedParseTestCase {
+func loadLinearParseTestCases(t *testing.T) []linearParseTestCase {
+	t.Helper()
+	return slices.Concat(
+		loadLinearParseTestFile(t, "linear_parse.csv"),
+		loadLinearParseTestFile(t, "fixed_parse.csv"))
+}
+
+func loadLinearParseTestFile(t *testing.T, filename string) []linearParseTestCase {
 	t.Helper()
 
-	path := filepath.Join(testCaseDirectory(t), "fixed_parse.csv")
+	path := filepath.Join(testCaseDirectory(t), filename)
 	file, err := os.Open(path)
 	if err != nil {
-		t.Fatalf("open fixture %q: %v", path, err)
+		t.Fatalf("open fixture %q: %v", filename, err)
 	}
 	defer file.Close()
 
@@ -99,10 +113,10 @@ func loadFixedParseTestCases(t *testing.T) []fixedParseTestCase {
 	reader.FieldsPerRecord = -1
 	records, err := reader.ReadAll()
 	if err != nil {
-		t.Fatalf("read fixture %q: %v", path, err)
+		t.Fatalf("read fixture %q: %v", filename, err)
 	}
 	if len(records) == 0 {
-		t.Fatalf("fixture %q has no header row", path)
+		t.Fatalf("fixture %q has no header row", filename)
 	}
 
 	headers := make([]string, len(records[0]))
@@ -110,7 +124,7 @@ func loadFixedParseTestCases(t *testing.T) []fixedParseTestCase {
 	for i, field := range records[0] {
 		header := strings.TrimSpace(field)
 		if header == "" {
-			t.Fatalf("fixture %q line 1: empty header", path)
+			t.Fatalf("fixture %q line 1: empty header", filename)
 		}
 		headers[i] = header
 		columns[header] = i
@@ -119,28 +133,27 @@ func loadFixedParseTestCases(t *testing.T) []fixedParseTestCase {
 	specCol := requiredColumn(t, path, columns, "spec")
 	wantErrCol := requiredColumn(t, path, columns, "want_error")
 	errorContainsCol := requiredColumn(t, path, columns, "error_contains")
-	widthCol := requiredColumn(t, path, columns, "width")
-	originCol := requiredColumn(t, path, columns, "origin")
+	mCol := requiredColumn(t, path, columns, "m")
+	bCol := requiredColumn(t, path, columns, "b")
 	alignmentCol := requiredColumn(t, path, columns, "alignment")
 	canonicalCol := requiredColumn(t, path, columns, "canonical")
 
-	testCases := make([]fixedParseTestCase, 0, len(records)-1)
-	fileName := filepath.Base(path)
+	testCases := make([]linearParseTestCase, 0, len(records)-1)
 	for i, fields := range records[1:] {
 		lineNo := i + 2
 		if len(fields) != len(headers) {
-			t.Fatalf("fixture %q line %d: expected %d fields, got %d", path, lineNo, len(headers), len(fields))
+			t.Fatalf("%s:%d: expected %d fields, got %d", filename, lineNo, len(headers), len(fields))
 		}
 
 		spec := fields[specCol]
 		wantErr, err := strconv.ParseBool(strings.TrimSpace(fields[wantErrCol]))
 		if err != nil {
-			t.Fatalf("%s:%d: parse want_error: %v", fileName, lineNo, err)
+			t.Fatalf("%s:%d: parse want_error: %v", filename, lineNo, err)
 		}
 		errorContains := strings.TrimSpace(fields[errorContainsCol])
 
-		tc := fixedParseTestCase{
-			file:          fileName,
+		tc := linearParseTestCase{
+			file:          filename,
 			line:          lineNo,
 			spec:          spec,
 			wantErr:       wantErr,
@@ -148,22 +161,22 @@ func loadFixedParseTestCases(t *testing.T) []fixedParseTestCase {
 		}
 
 		if !wantErr {
-			width, err := strconv.ParseFloat(strings.TrimSpace(fields[widthCol]), 64)
+			m, err := strconv.ParseFloat(strings.TrimSpace(fields[mCol]), 64)
 			if err != nil {
-				t.Fatalf("%s:%d: parse width: %v", fileName, lineNo, err)
+				t.Fatalf("%s:%d: parse m: %v", filename, lineNo, err)
 			}
-			origin, err := strconv.ParseFloat(strings.TrimSpace(fields[originCol]), 64)
+			b, err := strconv.ParseFloat(strings.TrimSpace(fields[bCol]), 64)
 			if err != nil {
-				t.Fatalf("%s:%d: parse origin: %v", fileName, lineNo, err)
+				t.Fatalf("%s:%d: parse b: %v", filename, lineNo, err)
 			}
 			alignment, err := ParseAlignment(strings.TrimSpace(fields[alignmentCol]))
 			if err != nil {
-				t.Fatalf("%s:%d: parse alignment: %v", fileName, lineNo, err)
+				t.Fatalf("%s:%d: parse alignment: %v", filename, lineNo, err)
 			}
-			tc.want = &fixedBucketer{
-				Width:     width,
-				Origin:    origin,
-				Alignment: alignment,
+			tc.want = linearParseExpectation{
+				m:         m,
+				b:         b,
+				alignment: alignment,
 			}
 			tc.canonical = fields[canonicalCol]
 		}

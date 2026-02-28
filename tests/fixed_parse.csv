@@ -1,24 +1,24 @@
-spec,want_error,error_contains,width,origin,alignment,canonical
-"fixed",false,,1,0,right,"fixed"
-"fixed:width=0.5",false,,0.5,0,right,"fixed:width=0.5"
-"fixed:width=10,origin=5",false,,10,5,right,"fixed:width=10,origin=5"
-"fixed:closed=right",false,,1,0,right,"fixed"
-"fixed:width=0.5,closed=right",false,,0.5,0,right,"fixed:width=0.5"
-"fixed:closed=right,width=10,origin=5",false,,10,5,right,"fixed:width=10,origin=5"
-"fixed:width=10,closed=right,origin=5",false,,10,5,right,"fixed:width=10,origin=5"
-"fixed:width=20,origin=10,closed=right",false,,20,10,right,"fixed:width=20,origin=10"
-"fixed:width=30,origin=15,closed=left",false,,30,15,left,"fixed:width=30,origin=15,closed=left"
-" fixed : WIDTH=10, ORIGIN=5, CLOSED=RIGHT ",false,,10,5,right,"fixed:width=10,origin=5"
-"fixed:width=2,foo=bar",false,,2,0,right,"fixed:width=2"
-"fixed:width=10,width=2,origin=1,origin=3",false,,2,3,right,"fixed:width=2,origin=3"
-"fixed:width=10,,origin=5, ,closed=left,",false,,10,5,left,"fixed:width=10,origin=5,closed=left"
-"fixed:width=1e1",false,,10,0,right,"fixed:width=10"
+spec,want_error,error_contains,m,b,alignment,canonical
+"fixed",false,,1,0,right,"linear"
+"fixed:width=0.5",false,,0.5,0,right,"linear:m=0.5"
+"fixed:width=10,origin=5",false,,10,5,right,"linear:m=10,b=5"
+"fixed:align=right",false,,1,0,right,"linear"
+"fixed:width=0.5,align=right",false,,0.5,0,right,"linear:m=0.5"
+"fixed:align=right,width=10,origin=5",false,,10,5,right,"linear:m=10,b=5"
+"fixed:width=10,align=right,origin=5",false,,10,5,right,"linear:m=10,b=5"
+"fixed:width=20,origin=10,align=right",false,,20,10,right,"linear:m=20,b=10"
+"fixed:width=30,origin=15,align=left",false,,30,15,left,"linear:m=30,b=15,align=left"
+" fixed : WIDTH=10, ORIGIN=5, ALIGN=RIGHT ",false,,10,5,right,"linear:m=10,b=5"
+"fixed:width=2,foo=bar",false,,2,0,right,"linear:m=2"
+"fixed:width=10,width=2,origin=1,origin=3",false,,2,3,right,"linear:m=2,b=3"
+"fixed:width=10,,origin=5, ,align=left,",false,,10,5,left,"linear:m=10,b=5,align=left"
+"fixed:width=1e1",false,,10,0,right,"linear:m=10"
 "fixed:width=0",true,invalid width,,,,
 "fixed:width=oops",true,invalid width,,,,
 "fixed:width=",true,invalid width,,,,
 "fixed:origin=oops",true,invalid origin,,,,
-"fixed:closed=oops",true,invalid closed side,,,,
-"fixed:closed=",true,invalid closed side,,,,
+"fixed:align=oops",true,invalid align,,,,
+"fixed:align=",true,invalid align,,,,
 "fixed:width=-1",true,invalid width,,,,
 "fixed:width=nan",true,invalid width,,,,
 "fixed:width=inf",true,invalid width,,,,
@@ -26,4 +26,4 @@ spec,want_error,error_contains,width,origin,alignment,canonical
 "fixed:origin=nan",true,invalid origin,,,,
 "fixed:origin=inf",true,invalid origin,,,,
 "fixed:origin=-inf",true,invalid origin,,,,
-"fixed:width=1e-9",false,,1e-09,0,right,"fixed:width=1e-09"
+"fixed:width=1e-9",false,,1e-09,0,right,"linear:m=1e-09"

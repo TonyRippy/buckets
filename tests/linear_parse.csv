@@ -1,0 +1,31 @@
+spec,want_error,error_contains,m,b,alignment,canonical
+"linear",false,,1,0,right,"linear"
+"linear:m=0.5",false,,0.5,0,right,"linear:m=0.5"
+"linear:m=10,b=5",false,,10,5,right,"linear:m=10,b=5"
+"linear:align=right",false,,1,0,right,"linear"
+"linear:m=0.5,align=right",false,,0.5,0,right,"linear:m=0.5"
+"linear:align=right,m=10,b=5",false,,10,5,right,"linear:m=10,b=5"
+"linear:m=10,align=right,b=5",false,,10,5,right,"linear:m=10,b=5"
+"linear:m=20,b=10,align=right",false,,20,10,right,"linear:m=20,b=10"
+"linear:m=30,b=15,align=left",false,,30,15,left,"linear:m=30,b=15,align=left"
+" linear : M=10, B=5, ALIGN=RIGHT ",false,,10,5,right,"linear:m=10,b=5"
+"linear:m=2,foo=bar",false,,2,0,right,"linear:m=2"
+"linear:m=10,m=2,b=1,b=3",false,,2,3,right,"linear:m=2,b=3"
+"linear:m=10,,b=5, ,align=left,",false,,10,5,left,"linear:m=10,b=5,align=left"
+"linear:m=1e1",false,,10,0,right,"linear:m=10"
+"linear:align=left",false,,1,0,left,"linear:align=left"
+"linear:align=right,align=left,m=4",false,,4,0,left,"linear:m=4,align=left"
+"linear:m=0",true,invalid slope,,,,
+"linear:m=oops",true,invalid slope,,,,
+"linear:m=",true,invalid slope,,,,
+"linear:b=oops",true,invalid intercept,,,,
+"linear:align=oops",true,invalid align,,,,
+"linear:align=",true,invalid align,,,,
+"linear:m=-1",true,invalid slope,,,,
+"linear:m=nan",true,invalid slope,,,,
+"linear:m=inf",true,invalid slope,,,,
+"linear:m=-inf",true,invalid slope,,,,
+"linear:b=nan",true,invalid intercept,,,,
+"linear:b=inf",true,invalid intercept,,,,
+"linear:b=-inf",true,invalid intercept,,,,
+"linear:m=1e-9",false,,1e-09,0,right,"linear:m=1e-09"
