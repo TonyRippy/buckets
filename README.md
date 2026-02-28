@@ -90,7 +90,12 @@ For example, the spec `"fixed:width=10,align=left"` will create a bucketing stra
 
 ### Linear
 
-Coming soon!
+The best way to think of the "linear" strategy is that its mapping function $f(i)$ is simply the standard formula for a line: $f(i) = Mi + B$.
+This is equivalent to the "fixed" strategy described above, just represented differently. In fact, they share the same implementation.
+
+The spec for this strategy uses the name `"linear"` and supports the following properties:
+* `m`, `b` (float) = the parameters to the line formula. (Defaults: `1.0` and `0.0` respectively)
+* `align` (str) = either `left` or `right`. (Default: `right`)
 
 ### Polynomial
 

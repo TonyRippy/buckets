@@ -54,6 +54,6 @@ func ParseAlignment(s string) (Alignment, error) {
 	case "right":
 		return Right, nil
 	default:
-		return 0, fmt.Errorf("invalid closed side %q", s)
+		return 0, fmt.Errorf("invalid alignment %q", s)
 	}
 }
