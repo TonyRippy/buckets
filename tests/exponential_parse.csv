@@ -1,0 +1,13 @@
+spec,want_error,error_contains,kind,base,origin,canonical
+"exponential",false,,exponential,2,0,"exponential"
+"exponential:base=2",false,,exponential,2,0,"exponential"
+"exponential:origin=1",false,,exponential,2,1,"exponential:origin=1"
+"exponential:origin=-1",false,,exponential,2,-1,"exponential:origin=-1"
+"exponential:base=2,origin=1",false,,exponential,2,1,"exponential:origin=1"
+"exponential:base=3,origin=1",false,,exponential,3,1,"exponential:base=3,origin=1"
+" exponential : BASE=e , ORIGIN=3 ",false,,exponential,2.718281828459045,3,"exponential:base=e,origin=3"
+"exponential:base=3,foo=bar",false,,exponential,3,0,"exponential:base=3"
+"exponential:base=1",true,invalid base,,,,
+"exponential:base=-1",true,invalid base,,,,
+"exponential:base=oops",true,invalid base,,,,
+"exponential:base=2,origin=nan",true,invalid origin,,,,
