@@ -22,6 +22,9 @@ const (
 	// UnderflowBucketIndex is the index of the underflow bucket.
 	// It is reserved for all values less than the interval for bucket UnderflowBucketIndex + 1.
 	UnderflowBucketIndex int32 = math.MinInt32
+
+	// OverflowBucketIndex is the index of the overflow bucket.
+	// It is reserved for all values greater than the interval for bucket OverflowBucketIndex - 1.
 	OverflowBucketIndex  int32 = math.MaxInt32
 )
 
