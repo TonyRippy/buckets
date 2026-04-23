@@ -1,5 +1,7 @@
 # 🗑 The "buckets" Library 🗑
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/TonyRippy/buckets/go/buckets.svg)](https://pkg.go.dev/github.com/TonyRippy/buckets/go/buckets)
+
 A library that implements common bucketing (or binning) strategies.
 Bucketing strategies can be constructed using direct library calls or created from a text-based specification.
 
