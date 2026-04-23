@@ -12,7 +12,7 @@ spec,value,index
 "exponential",4,2
 "exponential",5,3
 "exponential",5,3
-"exponential",17179869184,overflow
+"exponential",17179869184,34
 "exp",1,0
 "exp",2,1
 "exp",1,0
