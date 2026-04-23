@@ -1,0 +1,13 @@
+spec,index,from,from_bound,to,to_bound
+"exponential",0,0.5,open,1,closed
+"exponential:origin=1",0,1.5,open,2,closed
+"exponential",1,1,open,2,closed
+"exponential:origin=1",1,2,open,3,closed
+"exponential",2,2,open,4,closed
+"exponential",3,4,open,8,closed
+"exponential",-1,0.25,open,0.5,closed
+"exponential",-2,0.125,open,0.25,closed
+"exp:base=4",-1,0.0625,open,0.25,closed
+"exp:base=4",0,0.25,open,1,closed
+"exp:base=4",1,1,open,4,closed
+"exp:origin=-1",-1,-0.75,open,-0.5,closed

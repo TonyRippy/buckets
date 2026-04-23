@@ -14,7 +14,7 @@ The following are concepts used by the library that will explain how the various
 
 ### What is a Bucket?
 
-A *Bucket* is a continuous range of real number values that can be mapped to an integer *index*. Together, the buckets created by a bucketing strategy should cover all real numbers from -∞ to +∞. 
+A *Bucket* is a continuous range of real number values that can be mapped to an integer *index*. Ideally the buckets created by a bucketing strategy should cover all real numbers from -∞ to +∞, but that is not a strict requirement. 
 
 ![](docs/buckets.svg)
 
@@ -36,6 +36,7 @@ Which side of the bucket it defines is determined by the strategy's *Alignment*.
 A right-aligned strategy would define the bucket $i$ to be the inverval $\left( f(i-1), f(i) \right]$.
 
 The different mapping functions supported by this library are described below.
+
 ### Overflow & Underflow Buckets
 
 In practice, the number of buckets you can have are limited by the integer datatype of the index. For example, if your indexes are 16-bit integers, then you can have at most 65536 buckets. Because of this it is useful to reserve two special buckets called the *Overflow* and *Underflow* buckets.   
@@ -103,5 +104,27 @@ Coming soon!
 
 ### Exponential
 
-Coming soon!
+A standard *Exponential* strategy is one that has a mapping function $f(i)$ that takes a base $b > 1$ and takes it to the $i$-th power: $f(i) = b^i$.
 
+> [!WARNING] 
+> This strategy only covers the set of positive real values.
+> If you need coverage of all real values, take a look at the [Symmetric Exponential](#symmetric-exponential) strategy instead.
+
+The spec for this strategy uses the name `"exponential"` or the alias `"exp"`. It supports the following properties:
+* `base` (float) = The base to use to caluclate the bucket boundaries. It must be a number greater than $+1$. The constant `e` is treated as a special case that represents Euler's number. (Default: `2.0`)
+* `origin` (float) = The value that should be used as the asymptote for the exponential buckets. (Default: `0.0`)
+
+For example, the spec `"exponential:base=4"` will create a bucketing strategy that has the buckets:
+
+| Index | Range |
+| --- | --- |
+| -1  | `(0.0625, 0.25]` 
+| 0 | `(0.25, 1.0]` |
+| 1 | `(1, 4]` |
+| 2 | `(4, 16]` |
+| ... | ... |
+
+
+### Symmetric Exponential
+
+Coming soon!

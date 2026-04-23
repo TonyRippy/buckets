@@ -141,7 +141,7 @@ func loadIndexTestFile(t *testing.T, path string) []indexTestCase {
 			t.Fatalf("index fixture %q line %d: parse value: %v", path, lineNo, err)
 		}
 
-		index, err := strconv.ParseInt(strings.TrimSpace(fields[indexCol]), 10, 32)
+		index, err := parseIndex(strings.TrimSpace(fields[indexCol]))
 		if err != nil {
 			t.Fatalf("index fixture %q line %d: parse index: %v", path, lineNo, err)
 		}
@@ -151,8 +151,23 @@ func loadIndexTestFile(t *testing.T, path string) []indexTestCase {
 			line:      lineNo,
 			spec:      spec,
 			value:     value,
-			wantIndex: int32(index),
+			wantIndex: index,
 		})
 	}
 	return testCases
+}
+
+func parseIndex(s string) (int32, error) {
+	switch s {
+	case "underflow":
+		return UnderflowBucketIndex, nil
+	case "overflow":
+		return OverflowBucketIndex, nil
+	default:
+		i, err := strconv.ParseInt(s, 10, 32)
+		if err != nil {
+			return 0, fmt.Errorf("invalid index %q: %w", s, err)
+		}
+		return int32(i), nil
+	}
 }

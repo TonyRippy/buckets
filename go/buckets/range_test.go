@@ -129,7 +129,7 @@ func loadRangeTestFile(t *testing.T, path string) []rangeTestCase {
 			t.Fatalf(`%q:%d: empty spec`, path, line)
 		}
 
-		index, err := strconv.ParseInt(strings.TrimSpace(fields[indexCol]), 10, 32)
+		index, err := parseIndex(strings.TrimSpace(fields[indexCol]))
 		if err != nil {
 			t.Fatalf(`%q:%d: parsing index: %v`, path, line, err)
 		}
