@@ -114,13 +114,14 @@ The spec for this strategy uses the name `"exponential"` or the alias `"exp"`. I
 * `base` (float) = The base to use to caluclate the bucket boundaries. It must be a number greater than $+1$. The constant `e` is treated as a special case that represents Euler's number. (Default: `2.0`)
 * `origin` (float) = The value that should be used as the asymptote for the exponential buckets. (Default: `0.0`)
 
-For example, the spec `"fixed:width=10,align=left"` will create a bucketing strategy that has the buckets:
+For example, the spec `"exponential:base=4"` will create a bucketing strategy that has the buckets:
 
 | Index | Range |
 | --- | --- |
-| -1  | `[-10,0)` 
-| 0 | `[0,10)` |
-| 1 | `[10, 20)` |
+| -1  | `(0.0625, 0.25]` 
+| 0 | `(0.25, 1.0]` |
+| 1 | `(1, 4]` |
+| 2 | `(4, 16]` |
 | ... | ... |
 
 

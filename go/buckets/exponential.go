@@ -47,11 +47,11 @@ func (b *exponentialBucketer) IndexOf(value float64) (int32, error) {
 		return 0, fmt.Errorf("invalid value %g", value)
 	}
 	if math.IsInf(value, 1) {
-		return math.MaxInt32, nil
+		return OverflowBucketIndex, nil
 	}
 	shifted := value - b.Origin
-	if value < 0 {
-		return math.MinInt32, ErrOutOfRange
+	if shifted < 0 {
+		return UnderflowBucketIndex, ErrOutOfRange
 	}
 	bucket := math.Ceil(math.Log(shifted) / math.Log(b.Base))
 	if bucket > float64(math.MaxInt32) {
