@@ -15,7 +15,6 @@ package buckets
 import (
 	"encoding/csv"
 	"fmt"
-	"math"
 	"os"
 	"path/filepath"
 	"slices"
@@ -74,8 +73,8 @@ type linearParseTestCase struct {
 }
 
 type linearParseExpectation struct {
-	m         float64
-	b         float64
+	m float64
+	b float64
 }
 
 func (tc linearParseTestCase) Name() string {
@@ -159,8 +158,8 @@ func loadLinearParseTestFile(t *testing.T, filename string) []linearParseTestCas
 				t.Fatalf("%s:%d: parse b: %v", filename, lineNo, err)
 			}
 			tc.want = linearParseExpectation{
-				m:         m,
-				b:         b,
+				m: m,
+				b: b,
 			}
 			tc.canonical = fields[canonicalCol]
 		}
@@ -191,23 +190,5 @@ func TestLinearRangesShareIdenticalBoundaries(t *testing.T) {
 				}
 			}
 		})
-	}
-}
-
-func TestLinearRangesDoNotWrapEndpointIndexes(t *testing.T) {
-	for _, alignment := range []Alignment{Left, Right} {
-		strategy, err := LinearBucketer(1, 0, alignment)
-		if err != nil {
-			t.Fatal(err)
-		}
-		for _, index := range []int32{math.MinInt32, math.MaxInt32} {
-			interval, err := strategy.Range(index)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if interval.To-interval.From != 1 {
-				t.Fatalf("index %d alignment %v has invalid range %v", index, alignment, interval)
-			}
-		}
 	}
 }

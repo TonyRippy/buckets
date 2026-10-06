@@ -35,24 +35,33 @@ func LinearBucketer(m, b float64) (BucketingStrategy, error) {
 }
 
 func (b *linearBucketer) IndexOf(value float64) (int32, error) {
+	if math.IsNaN(value) {
+		return 0, fmt.Errorf("invalid value %g", value)
+	}
+	if value > b.boundaryAt(math.MaxInt32-1) {
+		return math.MaxInt32, nil
+	}
+	if value <= b.boundaryAt(math.MinInt32) {
+		return math.MinInt32, nil
+	}
 	shifted := (value - b.B) / b.M
 	return int32(math.Ceil(shifted)), nil
 }
 
 // boundaryAt returns the boundary value at the given index.
 func (b *linearBucketer) boundaryAt(index int32) float64 {
-	if index == math.MaxInt32 {
-		return math.Inf(1)
-	}
-	// Use FMA to avoid intermediate rounding errors.
-	return math.FMA(float64(index), b.M, b.B)
+	return float64(index)*b.M + b.B
 }
 
 func (b *linearBucketer) Range(index int32) (Range, error) {
-	// Compute each endpoint from its integer boundary index so neighboring
-	// buckets share the same binary64 value. Widen before adding or subtracting
-	// to avoid wrapping at the int32 limits.
-	return Range{From: b.boundaryAt(index - 1), To: b.boundaryAt(index), FromBound: Open, ToBound: Closed}, nil
+	switch index {
+	case math.MinInt32:
+		return Range{From: math.Inf(-1), To: b.boundaryAt(index), FromBound: Open, ToBound: Closed}, nil
+	case math.MaxInt32:
+		return Range{From: b.boundaryAt(index - 1), To: math.Inf(1), FromBound: Open, ToBound: Open}, nil
+	default:
+		return Range{From: b.boundaryAt(index - 1), To: b.boundaryAt(index), FromBound: Open, ToBound: Closed}, nil
+	}
 }
 
 func (b *linearBucketer) String() string {
