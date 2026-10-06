@@ -35,9 +35,6 @@ func assertLinearBucketerEquals(t *testing.T, want linearParseExpectation, got B
 	if linear.B != want.b {
 		t.Errorf("expected intercept %v, got %v", want.b, linear.B)
 	}
-	if linear.Alignment != want.alignment {
-		t.Errorf("expected alignment %v, got %v", want.alignment, linear.Alignment)
-	}
 }
 
 func TestLinearBucketerParse(t *testing.T) {
@@ -65,13 +62,6 @@ func TestLinearBucketerParse(t *testing.T) {
 	}
 }
 
-func TestLinearBucketerInvalidAlignment(t *testing.T) {
-	_, err := LinearBucketer(1, 0, Alignment(255))
-	if err == nil {
-		t.Fatalf("expected error")
-	}
-}
-
 type linearParseTestCase struct {
 	file          string
 	line          int
@@ -85,7 +75,6 @@ type linearParseTestCase struct {
 type linearParseExpectation struct {
 	m         float64
 	b         float64
-	alignment Alignment
 }
 
 func (tc linearParseTestCase) Name() string {
@@ -135,7 +124,6 @@ func loadLinearParseTestFile(t *testing.T, filename string) []linearParseTestCas
 	errorContainsCol := requiredColumn(t, path, columns, "error_contains")
 	mCol := requiredColumn(t, path, columns, "m")
 	bCol := requiredColumn(t, path, columns, "b")
-	alignmentCol := requiredColumn(t, path, columns, "alignment")
 	canonicalCol := requiredColumn(t, path, columns, "canonical")
 
 	testCases := make([]linearParseTestCase, 0, len(records)-1)
@@ -169,14 +157,9 @@ func loadLinearParseTestFile(t *testing.T, filename string) []linearParseTestCas
 			if err != nil {
 				t.Fatalf("%s:%d: parse b: %v", filename, lineNo, err)
 			}
-			alignment, err := ParseAlignment(strings.TrimSpace(fields[alignmentCol]))
-			if err != nil {
-				t.Fatalf("%s:%d: parse alignment: %v", filename, lineNo, err)
-			}
 			tc.want = linearParseExpectation{
 				m:         m,
 				b:         b,
-				alignment: alignment,
 			}
 			tc.canonical = fields[canonicalCol]
 		}

@@ -34,16 +34,21 @@ The main thing that distinguishes different bucketing strategies is the *Mapping
 
 The value $f(i)$ is always included in bucket $i$.
 
-Which side of the bucket it defines is determined by the strategy's *Alignment*. A left-aligned bucketing strategy will define bucket $i$ to be the interval $\left[ f(i), f(i+1) \right)$. 
+Which side of the bucket it defines is determined by the strategy's *Alignment*.
+A left-aligned bucketing strategy will define bucket $i$ to be the interval $\left[ f(i), f(i+1) \right)$. 
 A right-aligned strategy would define the bucket $i$ to be the inverval $\left( f(i-1), f(i) \right]$.
+This library uses right-aligned buckets, as this is what is most commonly used in practice.
 
 The different mapping functions supported by this library are described below.
 
 ### Overflow & Underflow Buckets
 
-In practice, the number of buckets you can have are limited by the integer datatype of the index. For example, if your indexes are 16-bit integers, then you can have at most 65536 buckets. Because of this it is useful to reserve two special buckets called the *Overflow* and *Underflow* buckets.   
+The number of buckets you can have are limited by the integer datatype of the index.
+For example, if your indexes are 16-bit integers, then you can have at most 65536 buckets.
+Because of this, it is useful to reserve two special buckets called the *Overflow* and *Underflow* buckets.   
 
-In this library, the overflow bucket has index `MAX_INT` and is used for all values greater than the interval for bucket `MAX_INT - 1`. Likewise, the underflow bucket has index `MIN_INT` and is used for all values less than the interval for bucket `MIN_INT + 1`.
+In this library, the overflow bucket has index `MAX_INT` and is used for all values greater than the interval for bucket `MAX_INT - 1`.
+Likewise, the underflow bucket has index `MIN_INT` and is used for all values less than the interval for bucket `MIN_INT + 1`.
 
 ## Using the Library
 
@@ -80,15 +85,14 @@ The simplest strategy is one where every bucket has a fixed width.
 The spec for this strategy uses the name `"fixed"` and supports the following properties:
 * `width` (float) = the width of the buckets. (Default: `1.0`)
 * `origin` (float) = the value that should be used as the starting point for generating buckets. (Default: `0.0`)
-* `align` (str) = either `left` or `right`. (Default: `right`)   
 
-For example, the spec `"fixed:width=10,align=left"` will create a bucketing strategy that has the buckets:
+For example, the spec `"fixed:width=10"` will create a bucketing strategy that has the buckets:
 
 | Index | Range |
 | --- | --- |
-| -1  | `[-10,0)` 
-| 0 | `[0,10)` |
-| 1 | `[10, 20)` |
+| -1  | `(-10,0]` 
+| 0 | `(0,10]` |
+| 1 | `(10, 20]` |
 | ... | ... |
 
 ### Linear
@@ -98,7 +102,6 @@ This is equivalent to the "fixed" strategy described above, just represented dif
 
 The spec for this strategy uses the name `"linear"` and supports the following properties:
 * `m`, `b` (float) = the parameters to the line formula. (Defaults: `1.0` and `0.0` respectively)
-* `align` (str) = either `left` or `right`. (Default: `right`)
 
 ### Polynomial
 
