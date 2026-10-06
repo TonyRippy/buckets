@@ -15,6 +15,7 @@ package buckets
 import (
 	"encoding/csv"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"sort"
@@ -50,6 +51,10 @@ func TestIndexes(t *testing.T) {
 			}
 			if gotIndex != tc.wantIndex {
 				t.Fatalf("expected index %d, got %d", tc.wantIndex, gotIndex)
+			}
+			// Infinities map to sentinel indices, but the outer ranges are open.
+			if math.IsInf(tc.value, 0) {
+				return
 			}
 
 			r, err := bucketer.Range(tc.wantIndex)

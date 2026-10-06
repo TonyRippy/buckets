@@ -7,3 +7,13 @@ spec,value,index
 "linear:m=10,b=5",5,0
 "linear:m=10,b=5",-5.001,-1
 "linear:m=10,b=5",15,1
+"linear:m=0.1",1.2,12
+"linear:m=0.1",1.2000000000000002,12
+"linear:m=0.1",1.2000000000000004,13
+"linear:m=0.1,b=1e16",1e16,-10
+"linear:m=1e308,b=1e308",-1e308,-1
+"linear:m=1e308,b=-1e308",1e308,2
+"linear:m=0.1",-Inf,underflow
+"linear:m=0.1",+Inf,overflow
+"linear:m=1e308",-Inf,underflow
+"linear:m=1e308",+Inf,overflow

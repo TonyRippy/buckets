@@ -38,14 +38,57 @@ func (b *linearBucketer) IndexOf(value float64) (int32, error) {
 	if math.IsNaN(value) {
 		return 0, fmt.Errorf("invalid value %g", value)
 	}
-	bucket := math.Ceil((value - b.B) / b.M)
-	if bucket >= float64(OverflowBucketIndex) {
+	if math.IsInf(value, 1) {
 		return OverflowBucketIndex, nil
 	}
-	if bucket <= float64(UnderflowBucketIndex) {
+	if math.IsInf(value, -1) {
 		return UnderflowBucketIndex, nil
 	}
-	return int32(bucket), nil
+
+	bucket := math.Ceil((value - b.B) / b.M)
+	var index int32
+	switch {
+	case bucket >= float64(OverflowBucketIndex):
+		index = OverflowBucketIndex
+	case bucket <= float64(UnderflowBucketIndex):
+		index = UnderflowBucketIndex
+	default:
+		index = int32(bucket)
+	}
+	// Division can round differently from the shared boundaries used by Range.
+	// Try nearby buckets first, retaining bounds for the binary-search fallback.
+	const maxWalkSteps = 4
+	low, high := int64(UnderflowBucketIndex), int64(OverflowBucketIndex)
+	for steps := 0; ; steps++ {
+		var direction int32
+		switch {
+		case index > UnderflowBucketIndex && value <= b.boundaryAt(index-1):
+			high = int64(index) - 1
+			direction = -1
+		case index < OverflowBucketIndex && value > b.boundaryAt(index):
+			low = int64(index) + 1
+			direction = 1
+		default:
+			return index, nil
+		}
+		if steps == maxWalkSteps {
+			break
+		}
+		index += direction
+	}
+
+	// Find the first closed upper boundary that contains value. Binary search
+	// also skips arbitrarily many empty buckets caused by rounded boundaries.
+	// The overflow bucket is the fallback if no finite-index boundary qualifies.
+	for low < high {
+		mid := low + (high-low)/2
+		if value <= b.boundaryAt(int32(mid)) {
+			high = mid
+		} else {
+			low = mid + 1
+		}
+	}
+	return int32(low), nil
 }
 
 // boundaryAt returns the boundary value at the given index.
