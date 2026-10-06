@@ -1,3 +1,3 @@
 module github.com/TonyRippy/buckets/go/buckets
 
-go 1.25
+go 1.26
