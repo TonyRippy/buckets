@@ -1,0 +1,24 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+    "makefile.configureOnOpen": true,
+    "files.exclude": {
+      "**/.gocache/**": true,
+      "**/.gomodcache/**": true
+    },
+    "files.watcherExclude": {
+      "**/.git/objects/**": true,
+      "**/.git/subtree-cache/**": true,
+      "**/.gocache/**": true,
+      "**/.gomodcache/**": true
+    },
+    "search.exclude": {
+      "**/.gocache/**": true,
+      "**/.gomodcache/**": true
+    }
+  }
+}
