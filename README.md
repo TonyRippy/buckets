@@ -85,15 +85,14 @@ The simplest strategy is one where every bucket has a fixed width.
 The spec for this strategy uses the name `"fixed"` and supports the following properties:
 * `width` (float) = the width of the buckets. (Default: `1.0`)
 * `origin` (float) = the value that should be used as the starting point for generating buckets. (Default: `0.0`)
-* `align` (str) = either `left` or `right`. (Default: `right`)   
 
-For example, the spec `"fixed:width=10,align=left"` will create a bucketing strategy that has the buckets:
+For example, the spec `"fixed:width=10"` will create a bucketing strategy that has the buckets:
 
 | Index | Range |
 | --- | --- |
-| -1  | `[-10,0)` 
-| 0 | `[0,10)` |
-| 1 | `[10, 20)` |
+| -1  | `(-10,0]` 
+| 0 | `(0,10]` |
+| 1 | `(10, 20]` |
 | ... | ... |
 
 ### Linear
@@ -103,7 +102,6 @@ This is equivalent to the "fixed" strategy described above, just represented dif
 
 The spec for this strategy uses the name `"linear"` and supports the following properties:
 * `m`, `b` (float) = the parameters to the line formula. (Defaults: `1.0` and `0.0` respectively)
-* `align` (str) = either `left` or `right`. (Default: `right`)
 
 ### Polynomial
 

@@ -20,46 +20,28 @@ import (
 )
 
 type linearBucketer struct {
-	M, B      float64
-	Alignment Alignment
+	M, B float64
 }
 
 // LinearBucketer returns a linear bucketer with the given slope and intercept.
-func LinearBucketer(m, b float64, align Alignment) (BucketingStrategy, error) {
+func LinearBucketer(m, b float64) (BucketingStrategy, error) {
 	if math.IsNaN(m) || math.IsInf(m, 0) || m <= 0 {
 		return nil, fmt.Errorf("invalid slope %g", m)
 	}
 	if math.IsNaN(b) || math.IsInf(b, 0) {
 		return nil, fmt.Errorf("invalid intercept %g", b)
 	}
-	if align != Left && align != Right {
-		return nil, fmt.Errorf("invalid alignment %d", align)
-	}
-	return &linearBucketer{M: m, B: b, Alignment: align}, nil
+	return &linearBucketer{M: m, B: b}, nil
 }
 
 func (b *linearBucketer) IndexOf(value float64) (int32, error) {
 	shifted := (value - b.B) / b.M
-	switch b.Alignment {
-	case Left:
-		return int32(math.Floor(shifted)), nil
-	case Right:
-		return int32(math.Ceil(shifted)), nil
-	default:
-		return 0, fmt.Errorf("invalid alignment %d", b.Alignment)
-	}
+	return int32(math.Ceil(shifted)), nil
 }
 
 func (b *linearBucketer) Range(index int32) (Range, error) {
 	x := b.B + float64(index)*b.M
-	switch b.Alignment {
-	case Left:
-		return Range{From: x, To: x + b.M, FromBound: Closed, ToBound: Open}, nil
-	case Right:
-		return Range{From: x - b.M, To: x, FromBound: Open, ToBound: Closed}, nil
-	default:
-		return Range{}, fmt.Errorf("invalid alignment %d", b.Alignment)
-	}
+	return Range{From: x - b.M, To: x, FromBound: Open, ToBound: Closed}, nil
 }
 
 func (b *linearBucketer) String() string {
@@ -69,9 +51,6 @@ func (b *linearBucketer) String() string {
 	}
 	if b.B != 0 {
 		parts = append(parts, fmt.Sprintf("b=%g", b.B))
-	}
-	if b.Alignment == Left {
-		parts = append(parts, "align=left")
 	}
 	if len(parts) == 0 {
 		return "linear"
@@ -96,15 +75,7 @@ func parseLinearBucketer(args map[string]string) (BucketingStrategy, error) {
 			return nil, fmt.Errorf("invalid intercept %q", arg)
 		}
 	}
-	align := Right
-	if arg, ok := args["align"]; ok {
-		var err error
-		align, err = ParseAlignment(arg)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return LinearBucketer(m, b, align)
+	return LinearBucketer(m, b)
 }
 
 func init() {
