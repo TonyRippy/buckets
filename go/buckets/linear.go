@@ -35,13 +35,36 @@ func LinearBucketer(m, b float64) (BucketingStrategy, error) {
 }
 
 func (b *linearBucketer) IndexOf(value float64) (int32, error) {
-	shifted := (value - b.B) / b.M
-	return int32(math.Ceil(shifted)), nil
+	if math.IsNaN(value) {
+		return 0, fmt.Errorf("invalid value %g", value)
+	}
+	if math.IsInf(value, 1) {
+		return OverflowBucketIndex, nil
+	}
+	if math.IsInf(value, -1) {
+		return UnderflowBucketIndex, nil
+	}
+
+	bucket := math.Ceil((value - b.B) / b.M)
+	var index int32
+	switch {
+	case bucket >= float64(OverflowBucketIndex):
+		index = OverflowBucketIndex
+	case bucket <= float64(UnderflowBucketIndex):
+		index = UnderflowBucketIndex
+	default:
+		index = int32(bucket)
+	}
+	return correctBucketIndex(value, index, b.boundaryAt), nil
+}
+
+// boundaryAt returns the boundary value at the given index.
+func (b *linearBucketer) boundaryAt(index int32) float64 {
+	return float64(index)*b.M + b.B
 }
 
 func (b *linearBucketer) Range(index int32) (Range, error) {
-	x := b.B + float64(index)*b.M
-	return Range{From: x - b.M, To: x, FromBound: Open, ToBound: Closed}, nil
+	return bucketRange(index, b.boundaryAt), nil
 }
 
 func (b *linearBucketer) String() string {

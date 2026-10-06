@@ -15,6 +15,7 @@ package buckets
 import (
 	"encoding/csv"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"slices"
@@ -73,8 +74,8 @@ type linearParseTestCase struct {
 }
 
 type linearParseExpectation struct {
-	m         float64
-	b         float64
+	m float64
+	b float64
 }
 
 func (tc linearParseTestCase) Name() string {
@@ -158,8 +159,8 @@ func loadLinearParseTestFile(t *testing.T, filename string) []linearParseTestCas
 				t.Fatalf("%s:%d: parse b: %v", filename, lineNo, err)
 			}
 			tc.want = linearParseExpectation{
-				m:         m,
-				b:         b,
+				m: m,
+				b: b,
 			}
 			tc.canonical = fields[canonicalCol]
 		}
@@ -167,4 +168,86 @@ func loadLinearParseTestFile(t *testing.T, filename string) []linearParseTestCas
 		testCases = append(testCases, tc)
 	}
 	return testCases
+}
+
+func TestLinearRangesShareIdenticalBoundaries(t *testing.T) {
+	for _, spec := range []string{"linear:m=0.1", "linear:m=0.1,align=left", "linear:m=0.2,b=0.1", "linear:m=0.2,b=0.1,align=left", "fixed:width=0.01"} {
+		t.Run(spec, func(t *testing.T) {
+			strategy, err := Parse(spec)
+			if err != nil {
+				t.Fatal(err)
+			}
+			for index := int32(-1000); index < 1000; index++ {
+				lower, err := strategy.Range(index)
+				if err != nil {
+					t.Fatal(err)
+				}
+				upper, err := strategy.Range(index + 1)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if lower.To != upper.From {
+					t.Fatalf("adjacent buckets %d and %d disagree: %.17g != %.17g", index, index+1, lower.To, upper.From)
+				}
+			}
+		})
+	}
+}
+
+func TestLinearIndexRangeContainsBoundaryNeighbors(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		m, b float64
+	}{
+		{"fractional", 0.1, 0},
+		{"intercept", 0.2, 0.1},
+		{"collapsed boundaries", 0.1, 1e16},
+		{"all boundaries equal", math.SmallestNonzeroFloat64, 1},
+		{"overflowing arithmetic", 1e308, -1e308},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			strategy, err := LinearBucketer(tc.m, tc.b)
+			if err != nil {
+				t.Fatal(err)
+			}
+			indices := []int32{UnderflowBucketIndex, UnderflowBucketIndex + 1, OverflowBucketIndex - 2, OverflowBucketIndex - 1}
+			for index := int32(-1000); index <= 1000; index++ {
+				indices = append(indices, index)
+			}
+			for _, index := range indices {
+				r, err := strategy.Range(index)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if math.IsInf(r.To, 0) {
+					continue
+				}
+				for _, value := range []float64{math.Nextafter(r.To, math.Inf(-1)), r.To, math.Nextafter(r.To, math.Inf(1))} {
+					got, err := strategy.IndexOf(value)
+					if err != nil {
+						t.Fatal(err)
+					}
+					assigned, err := strategy.Range(got)
+					if err != nil {
+						t.Fatal(err)
+					}
+					if !assigned.Contains(value) {
+						t.Fatalf("boundary at %d: IndexOf(%.17g) = %d, but range %v excludes value", index, value, got, assigned)
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestLinearIndexNaN(t *testing.T) {
+	for _, m := range []float64{0.1, 1e308} {
+		strategy, err := LinearBucketer(m, 0)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := strategy.IndexOf(math.NaN()); err == nil {
+			t.Fatalf("slope %g: expected an error for NaN", m)
+		}
+	}
 }
