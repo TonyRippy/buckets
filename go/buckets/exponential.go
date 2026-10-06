@@ -54,25 +54,29 @@ func (b *exponentialBucketer) IndexOf(value float64) (int32, error) {
 		return UnderflowBucketIndex, ErrOutOfRange
 	}
 	bucket := math.Ceil(math.Log(shifted) / math.Log(b.Base))
-	if bucket > float64(math.MaxInt32) {
-		return math.MaxInt32, nil
+	if bucket >= float64(OverflowBucketIndex) {
+		return OverflowBucketIndex, nil
 	}
-	if bucket < float64(math.MinInt32) {
-		return math.MinInt32, nil
+	if bucket <= float64(UnderflowBucketIndex) {
+		return UnderflowBucketIndex, nil
 	}
 	return int32(bucket), nil
 }
 
+// boundaryAt returns the boundary value at the given index.
+func (b *exponentialBucketer) boundaryAt(index int32) float64 {
+	return b.Origin + math.Pow(b.Base, float64(index))
+}
+
 func (b *exponentialBucketer) Range(index int32) (Range, error) {
-	to := b.Origin + math.Pow(b.Base, float64(index))
-	if index == UnderflowBucketIndex {
-		return Range{From: math.Inf(-1), To: to, FromBound: Open, ToBound: Closed}, nil
+	switch index {
+	case UnderflowBucketIndex:
+		return Range{From: math.Inf(-1), To: b.boundaryAt(index), FromBound: Open, ToBound: Closed}, nil
+	case OverflowBucketIndex:
+		return Range{From: b.boundaryAt(index - 1), To: math.Inf(1), FromBound: Open, ToBound: Open}, nil
+	default:
+		return Range{From: b.boundaryAt(index - 1), To: b.boundaryAt(index), FromBound: Open, ToBound: Closed}, nil
 	}
-	if index == OverflowBucketIndex {
-		return Range{From: to, To: math.Inf(1), FromBound: Open, ToBound: Open}, nil
-	}
-	from := b.Origin + math.Pow(b.Base, float64(index-1))
-	return Range{From: from, To: to, FromBound: Open, ToBound: Closed}, nil
 }
 
 func (b *exponentialBucketer) String() string {
