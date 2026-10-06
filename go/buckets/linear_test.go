@@ -15,6 +15,7 @@ package buckets
 import (
 	"encoding/csv"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"slices"
@@ -167,4 +168,46 @@ func loadLinearParseTestFile(t *testing.T, filename string) []linearParseTestCas
 		testCases = append(testCases, tc)
 	}
 	return testCases
+}
+
+func TestLinearRangesShareIdenticalBoundaries(t *testing.T) {
+	for _, spec := range []string{"linear:m=0.1", "linear:m=0.1,align=left", "linear:m=0.2,b=0.1", "linear:m=0.2,b=0.1,align=left", "fixed:width=0.01"} {
+		t.Run(spec, func(t *testing.T) {
+			strategy, err := Parse(spec)
+			if err != nil {
+				t.Fatal(err)
+			}
+			for index := int32(-1000); index < 1000; index++ {
+				lower, err := strategy.Range(index)
+				if err != nil {
+					t.Fatal(err)
+				}
+				upper, err := strategy.Range(index + 1)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if lower.To != upper.From {
+					t.Fatalf("adjacent buckets %d and %d disagree: %.17g != %.17g", index, index+1, lower.To, upper.From)
+				}
+			}
+		})
+	}
+}
+
+func TestLinearRangesDoNotWrapEndpointIndexes(t *testing.T) {
+	for _, alignment := range []Alignment{Left, Right} {
+		strategy, err := LinearBucketer(1, 0, alignment)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, index := range []int32{math.MinInt32, math.MaxInt32} {
+			interval, err := strategy.Range(index)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if interval.To-interval.From != 1 {
+				t.Fatalf("index %d alignment %v has invalid range %v", index, alignment, interval)
+			}
+		}
+	}
 }

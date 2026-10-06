@@ -40,8 +40,11 @@ func (b *linearBucketer) IndexOf(value float64) (int32, error) {
 }
 
 func (b *linearBucketer) Range(index int32) (Range, error) {
+	// Compute each endpoint from its integer boundary index so neighboring
+	// buckets share the same binary64 value. Widen before adding or subtracting
+	// to avoid wrapping at the int32 limits.
 	x := b.B + float64(index)*b.M
-	return Range{From: x - b.M, To: x, FromBound: Open, ToBound: Closed}, nil
+	return Range{From: b.B + float64(int64(index)-1)*b.M, To: x, FromBound: Open, ToBound: Closed}, nil
 }
 
 func (b *linearBucketer) String() string {

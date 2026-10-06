@@ -5,4 +5,4 @@ spec,index,from,from_bound,to,to_bound
 "linear:m=10,b=5",0,-5,open,5,closed
 "linear:m=10,b=5",1,5,open,15,closed
 "linear:m=0.1",4,0.30000000000000004,open,0.4,closed
-"linear:m=0.2,b=0.1",1,0.10000000000000003,open,0.30000000000000004,closed
+"linear:m=0.2,b=0.1",1,0.1,open,0.30000000000000004,closed
