@@ -55,40 +55,7 @@ func (b *linearBucketer) IndexOf(value float64) (int32, error) {
 	default:
 		index = int32(bucket)
 	}
-	// Division can round differently from the shared boundaries used by Range.
-	// Try nearby buckets first, retaining bounds for the binary-search fallback.
-	const maxWalkSteps = 4
-	low, high := int64(UnderflowBucketIndex), int64(OverflowBucketIndex)
-	for steps := 0; ; steps++ {
-		var direction int32
-		switch {
-		case index > UnderflowBucketIndex && value <= b.boundaryAt(index-1):
-			high = int64(index) - 1
-			direction = -1
-		case index < OverflowBucketIndex && value > b.boundaryAt(index):
-			low = int64(index) + 1
-			direction = 1
-		default:
-			return index, nil
-		}
-		if steps == maxWalkSteps {
-			break
-		}
-		index += direction
-	}
-
-	// Find the first closed upper boundary that contains value. Binary search
-	// also skips arbitrarily many empty buckets caused by rounded boundaries.
-	// The overflow bucket is the fallback if no finite-index boundary qualifies.
-	for low < high {
-		mid := low + (high-low)/2
-		if value <= b.boundaryAt(int32(mid)) {
-			high = mid
-		} else {
-			low = mid + 1
-		}
-	}
-	return int32(low), nil
+	return correctBucketIndex(value, index, b.boundaryAt), nil
 }
 
 // boundaryAt returns the boundary value at the given index.
@@ -97,14 +64,7 @@ func (b *linearBucketer) boundaryAt(index int32) float64 {
 }
 
 func (b *linearBucketer) Range(index int32) (Range, error) {
-	switch index {
-	case UnderflowBucketIndex:
-		return Range{From: math.Inf(-1), To: b.boundaryAt(index), FromBound: Open, ToBound: Closed}, nil
-	case OverflowBucketIndex:
-		return Range{From: b.boundaryAt(index - 1), To: math.Inf(1), FromBound: Open, ToBound: Open}, nil
-	default:
-		return Range{From: b.boundaryAt(index - 1), To: b.boundaryAt(index), FromBound: Open, ToBound: Closed}, nil
-	}
+	return bucketRange(index, b.boundaryAt), nil
 }
 
 func (b *linearBucketer) String() string {

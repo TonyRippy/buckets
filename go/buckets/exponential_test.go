@@ -15,6 +15,7 @@ package buckets
 import (
 	"encoding/csv"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -54,6 +55,67 @@ func TestExponentialOutOfCoverage(t *testing.T) {
 	}
 	if _, err := eb.IndexOf(-0.001); err == nil {
 		t.Fatalf("expected error for value below positive exponential coverage")
+	}
+}
+
+func TestExponentialIndexRangeContainsBoundaryNeighbors(t *testing.T) {
+	for _, tc := range []struct {
+		name         string
+		base, origin float64
+	}{
+		{"binary", 2, 0},
+		{"ternary", 3, 0},
+		{"fractional", 1.1, 0},
+		{"base near one", math.Nextafter(1, 2), 0},
+		{"origin", 2, 0.1},
+		{"collapsed boundaries", 2, 1e16},
+		{"large negative origin", 2, -1e308},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			strategy, err := ExponentialBucketer(tc.base, tc.origin)
+			if err != nil {
+				t.Fatal(err)
+			}
+			indices := []int32{UnderflowBucketIndex, UnderflowBucketIndex + 1, OverflowBucketIndex - 2, OverflowBucketIndex - 1}
+			for index := int32(-1100); index <= 1100; index++ {
+				indices = append(indices, index)
+			}
+			for _, index := range indices {
+				r, err := strategy.Range(index)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if math.IsInf(r.To, 0) {
+					continue
+				}
+				for _, value := range []float64{math.Nextafter(r.To, math.Inf(-1)), r.To, math.Nextafter(r.To, math.Inf(1))} {
+					if value < tc.origin || math.IsInf(value, 0) {
+						continue
+					}
+					got, err := strategy.IndexOf(value)
+					if err != nil {
+						t.Fatal(err)
+					}
+					assigned, err := strategy.Range(got)
+					if err != nil {
+						t.Fatal(err)
+					}
+					if !assigned.Contains(value) {
+						t.Fatalf("boundary at %d: IndexOf(%.17g) = %d, but range %v excludes value", index, value, got, assigned)
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestExponentialIndexNaN(t *testing.T) {
+	strategy, err := ExponentialBucketer(2, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := strategy.IndexOf(math.NaN()); err == nil {
+		t.Fatal("expected an error for NaN")
 	}
 }
 

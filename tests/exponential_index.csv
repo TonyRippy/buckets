@@ -29,3 +29,12 @@ spec,value,index
 "exponential:base=3,origin=2",3,0
 "exponential:base=3,origin=2",5,1
 "exponential:base=4",16,2
+"exponential:base=3",8.999999999999998,2
+"exponential:base=3",9,2
+"exponential:base=3",9.000000000000002,3
+"exponential",255.99999999999997,8
+"exponential",256,8
+"exponential",256.00000000000006,9
+"exponential",5e-324,-1074
+"exponential:origin=-1e308",1e308,1024
+"exponential",+Inf,overflow
