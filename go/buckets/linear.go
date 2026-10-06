@@ -39,12 +39,20 @@ func (b *linearBucketer) IndexOf(value float64) (int32, error) {
 	return int32(math.Ceil(shifted)), nil
 }
 
+// boundaryAt returns the boundary value at the given index.
+func (b *linearBucketer) boundaryAt(index int32) float64 {
+	if index == math.MaxInt32 {
+		return math.Inf(1)
+	}
+	// Use FMA to avoid intermediate rounding errors.
+	return math.FMA(float64(index), b.M, b.B)
+}
+
 func (b *linearBucketer) Range(index int32) (Range, error) {
 	// Compute each endpoint from its integer boundary index so neighboring
 	// buckets share the same binary64 value. Widen before adding or subtracting
 	// to avoid wrapping at the int32 limits.
-	x := b.B + float64(index)*b.M
-	return Range{From: b.B + float64(int64(index)-1)*b.M, To: x, FromBound: Open, ToBound: Closed}, nil
+	return Range{From: b.boundaryAt(index - 1), To: b.boundaryAt(index), FromBound: Open, ToBound: Closed}, nil
 }
 
 func (b *linearBucketer) String() string {
